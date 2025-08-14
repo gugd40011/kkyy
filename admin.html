@@ -454,7 +454,8 @@
       const ok = sessionStorage.getItem('adminAuthed') === '1';
       const overlay = document.getElementById('authOverlay');
       if (!ok){ overlay.style.display = 'flex'; }
-      document.getElementById('authUser').value = auth.user||'gugd888';
+      // 不预填默认用户名，避免明文暴露
+      document.getElementById('authUser').value = '';
       document.getElementById('authPass').value = '';
       document.getElementById('btnAuthLogin').onclick = () => {
         const u = (document.getElementById('authUser')||{}).value || '';
@@ -468,8 +469,9 @@
       };
       document.getElementById('btnAuthReset').onclick = () => {
         saveAuth({ user:'gugd888', pass:'qjklwwqvb888///' });
-        alert('已恢复默认：gugd888 / qjklwwqvb888///');
-        document.getElementById('authUser').value = 'gugd888';
+        alert('已恢复默认账号');
+        // 恢复默认后也不展示具体值
+        document.getElementById('authUser').value = '';
         document.getElementById('authPass').value = '';
       };
     }
