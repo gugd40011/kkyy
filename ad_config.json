@@ -1,0 +1,66 @@
+{
+  "adConfig": {
+    "link": "#",
+    "image": "",
+    "text": "",
+    "textColor": "#ffffff",
+    "textSize": 16,
+    "textPos": "lb",
+    "textBold": false,
+    "bgOpacity": 55,
+    "radius": 8,
+    "shadow": true,
+    "fontFamily": "",
+    "shadowStrength": 0.35,
+    "textAlign": "left",
+    "outlineWidth": 0,
+    "outlineColor": "#000000",
+    "textHtml": false
+  },
+  "leftAdConfig": {
+    "link": "#",
+    "image": "",
+    "text": "",
+    "textColor": "#ffffff",
+    "textSize": 16,
+    "textPos": "lb",
+    "textBold": false,
+    "bgOpacity": 55,
+    "radius": 8,
+    "shadow": true,
+    "fontFamily": "",
+    "shadowStrength": 0.35,
+    "textAlign": "left",
+    "outlineWidth": 0,
+    "outlineColor": "#000000",
+    "textHtml": false
+  },
+  "rightAdConfig": {
+    "link": "#",
+    "image": "",
+    "text": "",
+    "textColor": "#ffffff",
+    "textSize": 16,
+    "textPos": "lb",
+    "textBold": false,
+    "bgOpacity": 55,
+    "radius": 8,
+    "shadow": true,
+    "fontFamily": "",
+    "shadowStrength": 0.35,
+    "textAlign": "left",
+    "outlineWidth": 0,
+    "outlineColor": "#000000",
+    "textHtml": false
+  },
+  "adVisibility": {
+    "top": false,
+    "left": false,
+    "right": false
+  },
+  "adCarousel": {
+    "enabled": false,
+    "interval": 8,
+    "images": []
+  }
+}

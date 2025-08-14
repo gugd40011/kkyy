@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>广告管理</title>
+  <style>
+    body { font-family: 'Microsoft YaHei', Arial, sans-serif; background:#0f172a; color:#e2e8f0; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    p.note { margin: 0 0 16px; color:#94a3b8; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:16px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .row { display:flex; gap:10px; }
+    label { display:block; font-size:12px; color:#93c5fd; margin:6px 0 4px; }
+    input[type="url"], input[type="text"] { width:100%; padding:10px; border-radius:8px; border:1px solid #374151; background:#0b1220; color:#e5e7eb; }
+    .row-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+    .row-4 { display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px; }
+    select, input[type="color"], input[type="number"] { width:100%; padding:10px; border-radius:8px; border:1px solid #374151; background:#0b1220; color:#e5e7eb; }
+    .actions { margin-top:10px; display:flex; gap:10px; }
+    button { padding:10px 12px; border:none; border-radius:8px; cursor:pointer; }
+    .save { background:#3b82f6; color:#fff; }
+    .reset { background:#374151; color:#e5e7eb; }
+    .toggle { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .toggle input { transform: scale(1.2); }
+    .hr { height:1px; background:#1f2937; margin:18px 0; }
+    .hint { font-size:12px; color:#9ca3af; }
+    .link { color:#60a5fa; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h1>广告管理</h1>
+  <p class="note">本页面变更会保存到浏览器 localStorage。前台页面会自动读取。你可以先在此保存，然后在前台刷新查看效果。
+    <a class="link" href="index.html" target="_blank" rel="noopener noreferrer">打开前台</a>
+  </p>
+  <div class="card" style="margin-bottom:16px">
+    <div class="row" style="justify-content:space-between; align-items:center">
+      <div>
+        <b>轮播与定时</b>
+        <div class="hint">为顶部广告启用图片轮播，可配置间隔（秒）。</div>
+      </div>
+      <div class="row" style="align-items:center">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input id="topCarouselEnabled" type="checkbox" /> 顶部轮播
+        </label>
+        <label style="display:flex;align-items:center;gap:8px">
+          间隔
+          <input id="topCarouselInterval" type="number" min="2" max="120" value="8" style="width:80px" /> 秒
+        </label>
+        <label style="display:flex;align-items:center;gap:8px">
+          轮播图片（逗号分隔URL）
+          <input id="topCarouselImages" type="text" placeholder="https://a.jpg, https://b.jpg" style="min-width:360px" />
+        </label>
+        <button class="save" id="saveCarousel">保存轮播</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>顶部横幅</h3>
+      <div class="toggle">
+        <input id="topVisible" type="checkbox" />
+        <label for="topVisible">显示顶部广告</label>
+      </div>
+      <label for="topText">广告词（可留空）</label>
+      <input id="topText" type="text" placeholder="例如：限时活动，立即查看" />
+      <div class="hint">富文本示例：&lt;b style='color:#ff0'&gt;大促&lt;/b&gt;，&lt;i&gt;限时24小时&lt;/i&gt;，&lt;a href='https://example.com' style='color:#0ff' target='_blank'&gt;立即前往&lt;/a&gt;</div>
+      <div class="row-3">
+        <div>
+          <label for="topTextColor">文字颜色</label>
+          <input id="topTextColor" type="color" value="#ffffff" />
+        </div>
+        <div>
+          <label for="topTextSize">字号(px)</label>
+          <input id="topTextSize" type="number" min="10" max="36" value="16" />
+        </div>
+        <div>
+          <label for="topTextPos">位置</label>
+          <select id="topTextPos">
+            <option value="lb">左下</option>
+            <option value="rb">右下</option>
+            <option value="lt">左上</option>
+            <option value="rt">右上</option>
+            <option value="cc">居中</option>
+          </select>
+        </div>
+      </div>
+      <div class="row-4">
+        <div>
+          <label for="topBgColor">背景颜色</label>
+          <input id="topBgColor" type="color" value="#000000" />
+        </div>
+        <div>
+          <label for="topBgOpacity">背景不透明度(0-100)</label>
+          <input id="topBgOpacity" type="number" min="0" max="100" value="55" />
+        </div>
+        <div>
+          <label for="topRadius">圆角(px)</label>
+          <input id="topRadius" type="number" min="0" max="32" value="8" />
+        </div>
+        <div>
+          <label for="topFontFamily">字体家族</label>
+          <input id="topFontFamily" type="text" placeholder="如：'Microsoft YaHei', Arial" />
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label for="topShadow">阴影强度(0~1)</label>
+          <input id="topShadow" type="number" step="0.1" min="0" max="1" value="0.35" />
+        </div>
+        <div>
+          <label for="topTextAlign">对齐</label>
+          <select id="topTextAlign">
+            <option value="left">左</option>
+            <option value="center">中</option>
+            <option value="right">右</option>
+          </select>
+        </div>
+        <div>
+          <label for="topOutline">描边(px和颜色)</label>
+          <input id="topOutlineWidth" type="number" min="0" max="4" value="0" />
+          <input id="topOutlineColor" type="color" value="#000000" />
+        </div>
+      </div>
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="topTextBold" type="checkbox" /> 加粗
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="topTextHtml" type="checkbox" /> 使用富文本(支持HTML)
+        </label>
+      </div>
+      <label for="topLink">跳转链接</label>
+      <input id="topLink" type="url" placeholder="https://example.com" />
+      <label for="topImage">图片/GIF地址</label>
+      <input id="topImage" type="url" placeholder="https://.../banner.jpg 或 .gif" />
+      <div class="actions">
+        <button class="save" id="saveTop">保存</button>
+        <button class="reset" id="resetTop">恢复默认</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>左侧广告</h3>
+      <div class="toggle">
+        <input id="leftVisible" type="checkbox" />
+        <label for="leftVisible">显示左侧广告</label>
+      </div>
+      <label for="leftText">广告词（可留空）</label>
+      <input id="leftText" type="text" placeholder="例如：新品上架" />
+      <div class="hint">富文本示例：支持换行&lt;br/&gt;与内联样式</div>
+      <div class="row-3">
+        <div>
+          <label for="leftTextColor">文字颜色</label>
+          <input id="leftTextColor" type="color" value="#ffffff" />
+        </div>
+        <div>
+          <label for="leftTextSize">字号(px)</label>
+          <input id="leftTextSize" type="number" min="10" max="36" value="16" />
+        </div>
+        <div>
+          <label for="leftTextPos">位置</label>
+          <select id="leftTextPos">
+            <option value="lb">左下</option>
+            <option value="rb">右下</option>
+            <option value="lt">左上</option>
+            <option value="rt">右上</option>
+            <option value="cc">居中</option>
+          </select>
+        </div>
+      </div>
+      <div class="row-4">
+        <div>
+          <label for="leftBgColor">背景颜色</label>
+          <input id="leftBgColor" type="color" value="#000000" />
+        </div>
+        <div>
+          <label for="leftBgOpacity">背景不透明度(0-100)</label>
+          <input id="leftBgOpacity" type="number" min="0" max="100" value="55" />
+        </div>
+        <div>
+          <label for="leftRadius">圆角(px)</label>
+          <input id="leftRadius" type="number" min="0" max="32" value="8" />
+        </div>
+        <div>
+          <label for="leftFontFamily">字体家族</label>
+          <input id="leftFontFamily" type="text" placeholder="如：'Microsoft YaHei', Arial" />
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label for="leftShadow">阴影强度(0~1)</label>
+          <input id="leftShadow" type="number" step="0.1" min="0" max="1" value="0.35" />
+        </div>
+        <div>
+          <label for="leftTextAlign">对齐</label>
+          <select id="leftTextAlign">
+            <option value="left">左</option>
+            <option value="center">中</option>
+            <option value="right">右</option>
+          </select>
+        </div>
+        <div>
+          <label for="leftOutline">描边(px和颜色)</label>
+          <input id="leftOutlineWidth" type="number" min="0" max="4" value="0" />
+          <input id="leftOutlineColor" type="color" value="#000000" />
+        </div>
+      </div>
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="leftTextBold" type="checkbox" /> 加粗
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="leftTextHtml" type="checkbox" /> 使用富文本(支持HTML)
+        </label>
+      </div>
+      <label for="leftLink">跳转链接</label>
+      <input id="leftLink" type="url" placeholder="https://example.com" />
+      <label for="leftImage">图片/GIF地址</label>
+      <input id="leftImage" type="url" placeholder="https://.../image.jpg 或 .gif" />
+      <div class="actions">
+        <button class="save" id="saveLeft">保存</button>
+        <button class="reset" id="resetLeft">恢复默认</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>右侧广告</h3>
+      <div class="toggle">
+        <input id="rightVisible" type="checkbox" />
+        <label for="rightVisible">显示右侧广告</label>
+      </div>
+      <label for="rightText">广告词（可留空）</label>
+      <input id="rightText" type="text" placeholder="例如：超值优惠" />
+      <div class="hint">富文本示例：可放置图标 &amp; emoji ✨🔥</div>
+      <div class="row-3">
+        <div>
+          <label for="rightTextColor">文字颜色</label>
+          <input id="rightTextColor" type="color" value="#ffffff" />
+        </div>
+        <div>
+          <label for="rightTextSize">字号(px)</label>
+          <input id="rightTextSize" type="number" min="10" max="36" value="16" />
+        </div>
+        <div>
+          <label for="rightTextPos">位置</label>
+          <select id="rightTextPos">
+            <option value="lb">左下</option>
+            <option value="rb">右下</option>
+            <option value="lt">左上</option>
+            <option value="rt">右上</option>
+            <option value="cc">居中</option>
+          </select>
+        </div>
+      </div>
+      <div class="row-4">
+        <div>
+          <label for="rightBgColor">背景颜色</label>
+          <input id="rightBgColor" type="color" value="#000000" />
+        </div>
+        <div>
+          <label for="rightBgOpacity">背景不透明度(0-100)</label>
+          <input id="rightBgOpacity" type="number" min="0" max="100" value="55" />
+        </div>
+        <div>
+          <label for="rightRadius">圆角(px)</label>
+          <input id="rightRadius" type="number" min="0" max="32" value="8" />
+        </div>
+        <div>
+          <label for="rightFontFamily">字体家族</label>
+          <input id="rightFontFamily" type="text" placeholder="如：'Microsoft YaHei', Arial" />
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label for="rightShadow">阴影强度(0~1)</label>
+          <input id="rightShadow" type="number" step="0.1" min="0" max="1" value="0.35" />
+        </div>
+        <div>
+          <label for="rightTextAlign">对齐</label>
+          <select id="rightTextAlign">
+            <option value="left">左</option>
+            <option value="center">中</option>
+            <option value="right">右</option>
+          </select>
+        </div>
+        <div>
+          <label for="rightOutline">描边(px和颜色)</label>
+          <input id="rightOutlineWidth" type="number" min="0" max="4" value="0" />
+          <input id="rightOutlineColor" type="color" value="#000000" />
+        </div>
+      </div>
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="rightTextBold" type="checkbox" /> 加粗
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input id="rightTextHtml" type="checkbox" /> 使用富文本(支持HTML)
+        </label>
+      </div>
+      <label for="rightLink">跳转链接</label>
+      <input id="rightLink" type="url" placeholder="https://example.com" />
+      <label for="rightImage">图片/GIF地址</label>
+      <input id="rightImage" type="url" placeholder="https://.../image.jpg 或 .gif" />
+      <div class="actions">
+        <button class="save" id="saveRight">保存</button>
+        <button class="reset" id="resetRight">恢复默认</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+  <p class="hint">提示：前台会读取键 adConfig、leftAdConfig、rightAdConfig、adCarousel 以及 adVisibility。若广告被关闭，前台将隐藏对应区域。</p>
+
+  <div class="card" style="margin-top:16px">
+    <h3>跨设备广告配置同步</h3>
+    <div class="hint" style="margin-bottom:8px">说明：将当前浏览器里的广告配置导出为 <code>ad_config.json</code>，放到网站根目录（与 index.html 同级）后，前台会在加载时读取，从而让移动端与电脑端保持一致。</div>
+    <div class="row" style="align-items:center; gap:12px">
+      <button class="save" id="btnDownloadConfig">下载 ad_config.json</button>
+      <span class="hint">或推送到 GitHub（下方凭据复用）</span>
+    </div>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin-top:8px">
+      <div>
+        <label for="cfgPath">配置文件路径</label>
+        <input id="cfgPath" type="text" value="ad_config.json" />
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="save" id="btnPushConfig">推送 ad_config.json 到 GitHub</button>
+      <span class="hint" id="cfgPushStatus"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>全局同步设置</h3>
+    <div class="hint" style="margin-bottom:8px">勾选后：每次点击保存广告配置/可见性/轮播将自动推送 <code>ad_config.json</code>；爬取完成或定时任务结束后将自动推送最新 CSV。需要先在下方填写 GitHub 凭据。</div>
+    <div class="row" style="align-items:center; gap:12px">
+      <label style="display:flex; align-items:center; gap:8px">
+        <input id="autoSyncAd" type="checkbox" /> 保存后自动同步广告配置
+      </label>
+      <label style="display:flex; align-items:center; gap:8px">
+        <input id="autoSyncCsv" type="checkbox" /> 爬取后自动推送 CSV
+      </label>
+      <button class="save" id="btnSaveSync">保存设置</button>
+      <span class="hint" id="syncStatus"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>一键爬取 / 自动更新（纯前端）</h3>
+    <div class="hint" style="margin-bottom:8px">说明：本功能在浏览器中执行抓取，受目标站 CORS 限制，建议配置 CORS 代理。抓取完成会生成最新的 video_data.csv 并可选推送到 GitHub 仓库覆盖站点。</div>
+
+    <label>目标列表页起始URL（可多条，逗号分隔）</label>
+    <input id="crawlSites" type="text" placeholder="https://senlinzy.com/index.php/index/index/page/1.html, https://xxx.com/page/1" />
+
+    <div class="row-3" style="margin-top:8px">
+      <div>
+        <label for="crawlPages">最大页数</label>
+        <input id="crawlPages" type="number" min="1" max="50" value="5" />
+      </div>
+      <div>
+        <label for="crawlSleep">详情页间隔(秒)</label>
+        <input id="crawlSleep" type="number" min="0" step="0.2" value="1.0" />
+      </div>
+      <div>
+        <label for="crawlProxy">CORS代理（留空直连）</label>
+        <input id="crawlProxy" type="text" placeholder="https://api.allorigins.win/raw?url=%s" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px; align-items:center">
+      <button class="save" id="btnCrawlNow">立即爬取并生成CSV</button>
+      <button class="reset" id="btnDownloadCsv">下载CSV</button>
+      <span class="hint" id="crawlStatus" style="margin-left:8px"></span>
+    </div>
+
+    <div class="hr"></div>
+    <h4>推送到 GitHub（可选）</h4>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap:10px">
+      <div>
+        <label for="ghOwner">Owner/Org</label>
+        <input id="ghOwner" type="text" placeholder="yourname" />
+      </div>
+      <div>
+        <label for="ghRepo">Repo</label>
+        <input id="ghRepo" type="text" placeholder="yourrepo" />
+      </div>
+      <div>
+        <label for="ghBranch">Branch</label>
+        <input id="ghBranch" type="text" value="main" />
+      </div>
+      <div>
+        <label for="ghPath">文件路径</label>
+        <input id="ghPath" type="text" value="video_data.csv" />
+      </div>
+      <div>
+        <label for="ghToken">Token（repo 权限）</label>
+        <input id="ghToken" type="text" placeholder="ghp_..." />
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="save" id="btnPushGithub">推送到 GitHub</button>
+    </div>
+
+    <div class="hr"></div>
+    <h4>定时自动更新（仅在本页打开时有效）</h4>
+    <div class="row" style="align-items:center; gap:12px">
+      <label style="display:flex;align-items:center;gap:8px">
+        <input id="autoEnabled" type="checkbox" /> 开启定时
+      </label>
+      <label style="display:flex;align-items:center;gap:8px">
+        间隔(分钟)
+        <input id="autoInterval" type="number" min="1" value="60" style="width:100px" />
+      </label>
+      <button class="save" id="btnSaveAuto">保存定时</button>
+      <span class="hint" id="autoStatus"></span>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_AD = { link: 'https://example.com', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop', text: '', textColor: '#ffffff', textSize: 16, textPos: 'lb', textBold: false, bgOpacity: 55, radius: 8, shadow: true };
+    const DEFAULT_SIDE_AD = { link: 'https://example.com', image: 'https://images.unsplash.com/photo-1520975922424-c2e8e3f84b68?q=80&w=900&auto=format&fit=crop', text: '', textColor: '#ffffff', textSize: 16, textPos: 'lb', textBold: false, bgOpacity: 55, radius: 8, shadow: true };
+
+    function getJSON(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; } catch { return fallback; }
+    }
+    function setJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+    const DEFAULT_START_URL = 'https://senlinzy.com/index.php/index/index/page/1.html';
+    const DEFAULT_CORS_PROXY = 'https://api.allorigins.win/raw?url=%s';
+
+    function coalesce(val, fallback) { return (val === undefined || val === null) ? fallback : val; }
+    function init() {
+      // 轮播设置
+      const carousel = getJSON('adCarousel', { enabled:false, interval:8, images:[] });
+      document.getElementById('topCarouselEnabled').checked = !!carousel.enabled;
+      document.getElementById('topCarouselInterval').value = Number(carousel.interval || 8);
+      document.getElementById('topCarouselImages').value = (carousel.images||[]).join(', ');
+
+      document.getElementById('saveCarousel').onclick = () => {
+        const enabled = document.getElementById('topCarouselEnabled').checked;
+        const interval = Number(document.getElementById('topCarouselInterval').value) || 8;
+        const images = document.getElementById('topCarouselImages').value.split(',').map(s=>s.trim()).filter(Boolean);
+        setJSON('adCarousel', { enabled, interval, images });
+        broadcast();
+        alert('轮播设置已保存');
+        maybeAutoPushAdConfig();
+      };
+      const vis = getJSON('adVisibility', { top: true, left: true, right: true });
+      document.getElementById('topVisible').checked = !!vis.top;
+      document.getElementById('leftVisible').checked = !!vis.left;
+      document.getElementById('rightVisible').checked = !!vis.right;
+
+      const top = getJSON('adConfig', DEFAULT_AD);
+      document.getElementById('topLink').value = top.link || '';
+      document.getElementById('topImage').value = top.image || '';
+      document.getElementById('topText').value = top.text || '';
+      document.getElementById('topTextColor').value = top.textColor || '#ffffff';
+      document.getElementById('topTextSize').value = Number(top.textSize || 16);
+      document.getElementById('topTextPos').value = top.textPos || 'lb';
+      document.getElementById('topBgColor').value = top.bgColor || '#000000';
+      document.getElementById('topBgOpacity').value = Number(coalesce(top.bgOpacity, 55));
+      document.getElementById('topRadius').value = Number(coalesce(top.radius, 8));
+      document.getElementById('topFontFamily').value = top.fontFamily || '';
+      document.getElementById('topShadow').value = Number(top.shadowStrength ?? 0.35);
+      document.getElementById('topTextAlign').value = top.textAlign || 'left';
+      document.getElementById('topOutlineWidth').value = Number(top.outlineWidth || 0);
+      document.getElementById('topOutlineColor').value = top.outlineColor || '#000000';
+      document.getElementById('topTextBold').checked = !!top.textBold;
+      document.getElementById('topTextHtml').checked = !!top.textHtml;
+
+      const left = getJSON('leftAdConfig', DEFAULT_SIDE_AD);
+      document.getElementById('leftLink').value = left.link || '';
+      document.getElementById('leftImage').value = left.image || '';
+      document.getElementById('leftText').value = left.text || '';
+      document.getElementById('leftTextColor').value = left.textColor || '#ffffff';
+      document.getElementById('leftTextSize').value = Number(left.textSize || 16);
+      document.getElementById('leftTextPos').value = left.textPos || 'lb';
+      document.getElementById('leftBgColor').value = left.bgColor || '#000000';
+      document.getElementById('leftBgOpacity').value = Number(coalesce(left.bgOpacity, 55));
+      document.getElementById('leftRadius').value = Number(coalesce(left.radius, 8));
+      document.getElementById('leftFontFamily').value = left.fontFamily || '';
+      document.getElementById('leftShadow').value = Number(left.shadowStrength ?? 0.35);
+      document.getElementById('leftTextAlign').value = left.textAlign || 'left';
+      document.getElementById('leftOutlineWidth').value = Number(left.outlineWidth || 0);
+      document.getElementById('leftOutlineColor').value = left.outlineColor || '#000000';
+      document.getElementById('leftTextBold').checked = !!left.textBold;
+      document.getElementById('leftTextHtml').checked = !!left.textHtml;
+
+      const right = getJSON('rightAdConfig', DEFAULT_SIDE_AD);
+      document.getElementById('rightLink').value = right.link || '';
+      document.getElementById('rightImage').value = right.image || '';
+      document.getElementById('rightText').value = right.text || '';
+      document.getElementById('rightTextColor').value = right.textColor || '#ffffff';
+      document.getElementById('rightTextSize').value = Number(right.textSize || 16);
+      document.getElementById('rightTextPos').value = right.textPos || 'lb';
+      document.getElementById('rightBgColor').value = right.bgColor || '#000000';
+      document.getElementById('rightBgOpacity').value = Number(coalesce(right.bgOpacity, 55));
+      document.getElementById('rightRadius').value = Number(coalesce(right.radius, 8));
+      document.getElementById('rightFontFamily').value = right.fontFamily || '';
+      document.getElementById('rightShadow').value = Number(right.shadowStrength ?? 0.35);
+      document.getElementById('rightTextAlign').value = right.textAlign || 'left';
+      document.getElementById('rightOutlineWidth').value = Number(right.outlineWidth || 0);
+      document.getElementById('rightOutlineColor').value = right.outlineColor || '#000000';
+      document.getElementById('rightTextBold').checked = !!right.textBold;
+      document.getElementById('rightTextHtml').checked = !!right.textHtml;
+
+      document.getElementById('saveTop').onclick = () => {
+        setJSON('adConfig', { link: byId('topLink'), image: byId('topImage'), text: byId('topText'), textColor: byId('topTextColor'), textSize: toNum('topTextSize', 16), textPos: byId('topTextPos'), bgColor: byId('topBgColor'), bgOpacity: toNum('topBgOpacity', 55), radius: toNum('topRadius', 8), fontFamily: byId('topFontFamily'), shadowStrength: toNum('topShadow', 0.35), textAlign: byId('topTextAlign'), outlineWidth: toNum('topOutlineWidth', 0), outlineColor: byId('topOutlineColor'), textBold: document.getElementById('topTextBold').checked, textHtml: document.getElementById('topTextHtml').checked });
+        broadcast();
+        alert('顶部广告已保存');
+        maybeAutoPushAdConfig();
+      };
+      document.getElementById('resetTop').onclick = () => {
+        setJSON('adConfig', DEFAULT_AD);
+        alert('顶部广告已恢复默认');
+        maybeAutoPushAdConfig();
+      };
+
+      document.getElementById('saveLeft').onclick = () => {
+        setJSON('leftAdConfig', { link: byId('leftLink'), image: byId('leftImage'), text: byId('leftText'), textColor: byId('leftTextColor'), textSize: toNum('leftTextSize', 16), textPos: byId('leftTextPos'), bgColor: byId('leftBgColor'), bgOpacity: toNum('leftBgOpacity', 55), radius: toNum('leftRadius', 8), fontFamily: byId('leftFontFamily'), shadowStrength: toNum('leftShadow', 0.35), textAlign: byId('leftTextAlign'), outlineWidth: toNum('leftOutlineWidth', 0), outlineColor: byId('leftOutlineColor'), textBold: document.getElementById('leftTextBold').checked, textHtml: document.getElementById('leftTextHtml').checked });
+        broadcast();
+        alert('左侧广告已保存');
+        maybeAutoPushAdConfig();
+      };
+      document.getElementById('resetLeft').onclick = () => {
+        setJSON('leftAdConfig', DEFAULT_SIDE_AD);
+        alert('左侧广告已恢复默认');
+        maybeAutoPushAdConfig();
+      };
+
+      document.getElementById('saveRight').onclick = () => {
+        setJSON('rightAdConfig', { link: byId('rightLink'), image: byId('rightImage'), text: byId('rightText'), textColor: byId('rightTextColor'), textSize: toNum('rightTextSize', 16), textPos: byId('rightTextPos'), bgColor: byId('rightBgColor'), bgOpacity: toNum('rightBgOpacity', 55), radius: toNum('rightRadius', 8), fontFamily: byId('rightFontFamily'), shadowStrength: toNum('rightShadow', 0.35), textAlign: byId('rightTextAlign'), outlineWidth: toNum('rightOutlineWidth', 0), outlineColor: byId('rightOutlineColor'), textBold: document.getElementById('rightTextBold').checked, textHtml: document.getElementById('rightTextHtml').checked });
+        broadcast();
+        alert('右侧广告已保存');
+        maybeAutoPushAdConfig();
+      };
+      document.getElementById('resetRight').onclick = () => {
+        setJSON('rightAdConfig', DEFAULT_SIDE_AD);
+        alert('右侧广告已恢复默认');
+        maybeAutoPushAdConfig();
+      };
+
+      document.getElementById('topVisible').onchange = saveVisibility;
+      document.getElementById('leftVisible').onchange = saveVisibility;
+      document.getElementById('rightVisible').onchange = saveVisibility;
+    }
+
+    function saveVisibility() {
+      const v = {
+        top: document.getElementById('topVisible').checked,
+        left: document.getElementById('leftVisible').checked,
+        right: document.getElementById('rightVisible').checked,
+      };
+      setJSON('adVisibility', v);
+      broadcast();
+      maybeAutoPushAdConfig();
+    }
+
+    function byId(id) { return document.getElementById(id).value.trim(); }
+    function toNum(id, defVal) { const v = Number(document.getElementById(id).value); return Number.isFinite(v) ? v : defVal; }
+    function toNumPrompt(message, defVal) { const v = Number(prompt(message, String(defVal))); return Number.isFinite(v) ? v : defVal; }
+
+    function broadcast(){
+      try{ const bc = new BroadcastChannel('ad-config'); bc.postMessage({ type:'refresh' }); }catch(_){ /* ignore */ }
+    }
+    // ==== 一键爬取/自动更新（纯前端尝试，需目标站允许CORS或配置代理）====
+    let lastCsvContent = '';
+    function nowStamp(){
+      const d = new Date();
+      const p = (n)=> String(n).padStart(2,'0');
+      return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    }
+
+    function loadCsvHistoryJson(){
+      try { return JSON.parse(localStorage.getItem('csvHistoryJson')||'[]'); } catch { return []; }
+    }
+    function saveCsvHistoryJson(arr){
+      try { localStorage.setItem('csvHistoryJson', JSON.stringify(arr)); } catch {}
+    }
+    function jsonToCsv(arr){
+      let csv = '影片名称,m3u8 链接,封面,简介\n';
+      arr.forEach(o=>{
+        const r = [o.title||'', o.url||'', o.cover||'', o.desc||''];
+        const line = r.map(v=> '"'+String(v||'').replace(/"/g,'""')+'"').join(',');
+        csv += line+'\n';
+      });
+      return csv;
+    }
+
+    // ==== 自动同步（持久化设置 + 按需触发）====
+    function loadAutoSync(){
+      try { return JSON.parse(localStorage.getItem('autoSync')||'null') || { pushAd:false, pushCsv:false }; } catch { return { pushAd:false, pushCsv:false }; }
+    }
+    function saveAutoSync(cfg){
+      try { localStorage.setItem('autoSync', JSON.stringify(cfg)); } catch {}
+    }
+    function maybeAutoPushAdConfig(){
+      const cfg = loadAutoSync();
+      if (!cfg.pushAd) return;
+      // 需要 GitHub 凭据
+      const owner = byId('ghOwner');
+      const repo = byId('ghRepo');
+      const token = byId('ghToken');
+      if (!owner || !repo || !token) return;
+      try { pushAdConfig(); } catch(_){}
+    }
+    function maybeAutoPushCsv(){
+      const cfg = loadAutoSync();
+      if (!cfg.pushCsv) return;
+      // 需要 GitHub 凭据
+      const owner = byId('ghOwner');
+      const repo = byId('ghRepo');
+      const token = byId('ghToken');
+      if (!owner || !repo || !token) return;
+      try { pushGithub(); } catch(_){}
+    }
+
+    // ==== 跨设备广告配置同步 ====
+    function buildAdConfigObject(){
+      return {
+        adConfig: getJSON('adConfig', DEFAULT_AD),
+        leftAdConfig: getJSON('leftAdConfig', DEFAULT_SIDE_AD),
+        rightAdConfig: getJSON('rightAdConfig', DEFAULT_SIDE_AD),
+        adVisibility: getJSON('adVisibility', { top:true, left:true, right:true }),
+        adCarousel: getJSON('adCarousel', { enabled:false, interval:8, images:[] })
+      };
+    }
+
+    function downloadAdConfig(){
+      const obj = buildAdConfigObject();
+      const json = JSON.stringify(obj, null, 2);
+      const blob = new Blob([json], {type:'application/json;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'ad_config.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function pushAdConfig(){
+      const statusEl = document.getElementById('cfgPushStatus');
+      function setStatus(msg){ if (statusEl) statusEl.textContent = msg; }
+      try{
+        const owner = byId('ghOwner');
+        const repo = byId('ghRepo');
+        const branch = byId('ghBranch') || 'main';
+        const token = byId('ghToken');
+        const path = byId('cfgPath') || 'ad_config.json';
+        if (!owner || !repo || !token){ alert('请先在下方填写 GitHub Owner/Repo/Token'); return; }
+        setStatus('推送中...');
+        const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        // 获取 sha
+        let sha = null;
+        try{
+          const res = await fetch(apiBase+`?ref=${encodeURIComponent(branch)}`, { headers:{ Authorization:`Bearer ${token}` } });
+          if (res.ok){ const j = await res.json(); sha = j.sha; }
+        }catch(_){ }
+        const content = JSON.stringify(buildAdConfigObject(), null, 2);
+        const body = { message: 'chore: update ad_config.json via admin', content: btoa(unescape(encodeURIComponent(content))), branch };
+        if (sha) body.sha = sha;
+        const put = await fetch(apiBase, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) });
+        if (!put.ok){ const t = await put.text(); alert('推送失败: '+t); setStatus('失败'); return; }
+        alert('推送成功');
+        setStatus('已推送');
+      }catch(e){ console.error(e); alert('推送失败：'+ (e && e.message ? e.message : String(e))); setStatus('失败'); }
+    }
+
+    async function fetchRaw(url, proxy) {
+      try {
+        let target = url;
+        if (proxy && proxy.includes('%s')) target = proxy.replace('%s', encodeURIComponent(url));
+        else if (proxy) target = proxy + encodeURIComponent(url);
+        const res = await fetch(target, { credentials: 'omit' });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        return await res.text();
+      } catch (e) {
+        console.warn('fetchRaw failed', url, e);
+        return '';
+      }
+    }
+
+    function absUrl(base, href){
+      if (!href) return '';
+      if (/^https?:\/\//i.test(href)) return href;
+      if (href.startsWith('/')) {
+        try { const u = new URL(base); return `${u.origin}${href}` } catch { return href }
+      }
+      try { return new URL(href, base).href } catch { return href }
+    }
+
+    function extractList(html, base){
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const items = [];
+      doc.querySelectorAll('.videoContent li').forEach(li => {
+        const a = li.querySelector('a.videoName');
+        if (!a) return;
+        const title = a.textContent.trim();
+        const href = absUrl(base, a.getAttribute('href'));
+        let cover = '';
+        const img = li.querySelector('img');
+        if (img) {
+          cover = img.getAttribute('data-original') || img.getAttribute('src') || '';
+          cover = absUrl(base, cover);
+          if (cover.includes('/template/')) cover = '';
+        }
+        items.push({ title, href, cover });
+      });
+      // next page
+      let next = '';
+      const np = doc.querySelector(".pages a[title='下一页']");
+      if (np && np.getAttribute('href')) next = absUrl(base, np.getAttribute('href'));
+      return { items, next };
+    }
+
+    function extractDetail(html, base){
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      // m3u8 links
+      const texts = [doc.body.innerText || '', ...Array.from(doc.querySelectorAll('a.copy_text, .play_list a, a[onclick]')).map(a=> (a.textContent||'')+' '+(a.getAttribute('href')||'')+' '+(a.getAttribute('onclick')||''))];
+      const m3u8s = [];
+      const rx = /https?:\/\/[^\s'\"]+?\.m3u8/g;
+      texts.forEach(t => { (t.match(rx)||[]).forEach(u => m3u8s.push(u)); });
+      const m3u8 = Array.from(new Set(m3u8s)).join(' | ');
+      // cover
+      let cover = '';
+      const og = doc.querySelector('meta[property="og:image"]');
+      if (og && og.content) cover = absUrl(base, og.content.trim());
+      if (!cover) {
+        const sels = [
+          '.poster img', '.playLeft img', '.playleft img', '.videoCover img',
+          '.vodImg img', '.detail-pic img', '.stui-content__thumb img',
+          "img[src$='.jpg']", "img[src$='.png']", "img[src$='.webp']"
+        ];
+        for (const sel of sels) {
+          const im = doc.querySelector(sel);
+          if (im && im.getAttribute('src')) {
+            const u = absUrl(base, im.getAttribute('src').trim());
+            if (!u.includes('/template/')) { cover = u; break; }
+          }
+        }
+      }
+      // desc
+      let desc = '';
+      const meta = doc.querySelector('meta[name="description"], meta[property="og:description"]');
+      if (meta && meta.content) desc = meta.content.trim();
+      if (!desc) {
+        const sels = ['.vodContent', '.vod_content', '.videoInfo .desc', '.detail-desc', '.info .content', '.detail .content', '.context .content', '.vodplayinfo', '.playinfo', '.stui-content__detail', '.module-info-introduction-content'];
+        for (const sel of sels) {
+          const el = doc.querySelector(sel);
+          if (el) { const t = el.textContent.trim(); if (t) { desc = t; break; } }
+        }
+      }
+      if (desc.endsWith('森林资源')) desc = desc.replace(/[_-]?森林资源\s*$/,'');
+      if (desc.length > 1000) desc = desc.slice(0,1000)+'...';
+      return { m3u8, cover, desc };
+    }
+
+    async function crawlOnce(){
+      const statusEl = document.getElementById('crawlStatus');
+      function setStatus(msg){ if (statusEl) statusEl.textContent = msg; }
+      try{
+        setStatus('开始抓取...');
+        const sites = (document.getElementById('crawlSites').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+        if (!sites.length) { alert('请填写目标列表页起始URL'); setStatus('未开始'); return; }
+        const pages = Number(document.getElementById('crawlPages').value)||5;
+        const sleep = Math.max(0, Number(document.getElementById('crawlSleep').value)||1.0);
+        const proxy = document.getElementById('crawlProxy').value.trim();
+        const rows = [];
+        for (const startUrl of sites){
+          let url = startUrl; let page=1;
+          while (url && page<=pages){
+            setStatus(`抓取列表第 ${page}/${pages} 页...`);
+            const html = await fetchRaw(url, proxy);
+            if (!html) { console.warn('列表页抓取失败', url); break; }
+            const { items, next } = extractList(html, url);
+            setStatus(`本页共 ${items.length} 条，正在抓取详情...`);
+            for (let i=0;i<items.length;i++){
+              const it = items[i];
+              setStatus(`抓取详情 ${i+1}/${items.length}`);
+              const dhtml = await fetchRaw(it.href, proxy);
+              if (!dhtml) { console.warn('详情抓取失败', it.href); continue; }
+              const det = extractDetail(dhtml, it.href);
+              if (det.m3u8){ rows.push([it.title, det.m3u8, det.cover || it.cover || '', det.desc || '']); }
+              await new Promise(r=>setTimeout(r, sleep*1000));
+            }
+            url = next; page++;
+          }
+        }
+        // to CSV
+        let csv = '影片名称,m3u8 链接,封面,简介\n';
+        rows.forEach(r=>{
+          const line = r.map(v=> '"'+String(v||'').replace(/"/g,'""')+'"').join(',');
+          csv += line+'\n';
+        });
+        lastCsvContent = csv;
+
+        // 累积到本地历史（去重：按 m3u8 链接）
+        const history = loadCsvHistoryJson();
+        const urlSet = new Set(history.map(x=>x.url||''));
+        rows.forEach(r=>{
+          const [title, url, cover, desc] = r;
+          if (url && !urlSet.has(url)) {
+            history.push({ title, url, cover, desc });
+            urlSet.add(url);
+          }
+        });
+        saveCsvHistoryJson(history);
+        try { localStorage.setItem('csvHistoryCsv', jsonToCsv(history)); } catch {}
+        try { localStorage.setItem('csvHistoryUpdatedAt', new Date().toISOString()); } catch {}
+        setStatus(`完成，共 ${rows.length} 条`);
+        alert(`抓取完成，共 ${rows.length} 条。可点击“下载CSV”或配置 GitHub 推送。`);
+        // 若开启自动同步，自动推送 CSV
+        try { maybeAutoPushCsv(); } catch(_){}
+      }catch(err){
+        console.error(err);
+        alert('抓取失败：'+ (err && err.message ? err.message : String(err)));
+        const statusEl = document.getElementById('crawlStatus');
+        if (statusEl) statusEl.textContent = '失败';
+      }
+    }
+
+    function downloadCsv(){
+      if (!lastCsvContent){ alert('还没有抓取结果'); return; }
+      const blob = new Blob([lastCsvContent], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'video_data_'+ nowStamp() +'.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function pushGithub(){
+      if (!lastCsvContent){ alert('还没有抓取结果'); return; }
+      const owner = byId('ghOwner');
+      const repo = byId('ghRepo');
+      const branch = byId('ghBranch') || 'main';
+      const path = byId('ghPath') || 'video_data.csv';
+      const token = byId('ghToken');
+      if (!owner || !repo || !token){ alert('请填写 Owner/Repo/Token'); return; }
+      const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      // 获取 sha
+      let sha = null;
+      try{
+        const res = await fetch(apiBase+`?ref=${encodeURIComponent(branch)}`, { headers:{ Authorization:`Bearer ${token}` } });
+        if (res.ok){ const j = await res.json(); sha = j.sha; }
+      }catch(_){ }
+      // 提交
+      const content = btoa(unescape(encodeURIComponent(lastCsvContent)));
+      const body = { message: 'chore: update video_data.csv via admin', content, branch };
+      if (sha) body.sha = sha;
+      const put = await fetch(apiBase, { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` }, body: JSON.stringify(body) });
+      if (!put.ok){ const t = await put.text(); alert('推送失败: '+t); return; }
+      alert('推送成功');
+      broadcast();
+    }
+
+    // 定时任务（页面打开期间生效）
+    let autoTimer = null;
+    function loadAuto(){
+      try{ return JSON.parse(localStorage.getItem('crawlSchedule')||'null')||{ enabled:false, intervalMin:60 } }catch{ return { enabled:false, intervalMin:60 } }
+    }
+    function saveAuto(cfg){ localStorage.setItem('crawlSchedule', JSON.stringify(cfg)); }
+    function applyAuto(){
+      const cfg = loadAuto();
+      document.getElementById('autoEnabled').checked = !!cfg.enabled;
+      document.getElementById('autoInterval').value = Number(cfg.intervalMin||60);
+      const st = document.getElementById('autoStatus');
+      if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+      if (cfg.enabled){
+        autoTimer = setInterval(async ()=>{ await crawlOnce(); /* 可选自动推送 */ }, Math.max(1, cfg.intervalMin||60)*60*1000);
+        st.textContent = `已开启，每 ${cfg.intervalMin} 分钟执行一次（需保持本页打开）`;
+      } else {
+        st.textContent = '未开启';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      init();
+      // 预填：目标站与代理（可修改）
+      const cs = document.getElementById('crawlSites');
+      if (!cs.value.trim()) cs.value = DEFAULT_START_URL;
+      const cp = document.getElementById('crawlProxy');
+      if (!cp.value.trim()) cp.value = DEFAULT_CORS_PROXY;
+      // 绑定爬取按钮
+      document.getElementById('btnCrawlNow').onclick = crawlOnce;
+      document.getElementById('btnDownloadCsv').onclick = downloadCsv;
+      document.getElementById('btnPushGithub').onclick = pushGithub;
+      document.getElementById('btnSaveAuto').onclick = ()=>{ const cfg = { enabled: document.getElementById('autoEnabled').checked, intervalMin: Number(document.getElementById('autoInterval').value)||60 }; saveAuto(cfg); applyAuto(); maybeAutoPushAdConfig(); };
+      applyAuto();
+
+      // 预填 GitHub 路径为带时间戳的文件名（若为空或默认值）
+      try{
+        const ghp = document.getElementById('ghPath');
+        if (ghp && (!ghp.value || ghp.value === 'video_data.csv')) ghp.value = 'video_data_'+ nowStamp() +'.csv';
+      }catch(_){ }
+
+      // 跨设备配置同步按钮绑定
+      try{
+        document.getElementById('btnDownloadConfig').onclick = downloadAdConfig;
+        document.getElementById('btnPushConfig').onclick = pushAdConfig;
+        const cfgp = document.getElementById('cfgPath');
+        if (cfgp && (!cfgp.value || cfgp.value === 'ad_config.json')) cfgp.value = 'ad_config.json';
+      }catch(_){ }
+
+      // 自动同步设置绑定
+      try{
+        const sync = loadAutoSync();
+        const cbAd = document.getElementById('autoSyncAd');
+        const cbCsv = document.getElementById('autoSyncCsv');
+        if (cbAd) cbAd.checked = !!sync.pushAd;
+        if (cbCsv) cbCsv.checked = !!sync.pushCsv;
+        document.getElementById('btnSaveSync').onclick = () => {
+          const cfg = { pushAd: !!document.getElementById('autoSyncAd').checked, pushCsv: !!document.getElementById('autoSyncCsv').checked };
+          saveAutoSync(cfg);
+          const st = document.getElementById('syncStatus');
+          if (st) st.textContent = '已保存';
+        };
+      }catch(_){ }
+    });
+  </script>
+</body>
+</html>

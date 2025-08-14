@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影片播放器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 110px; /* 预留置顶广告高度 */
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .search-box {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            width: 320px;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .filters select, .filters button {
+            padding: 10px 14px;
+            font-size: 14px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: #fff;
+            color: #333;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-thumbnail img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .play-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-desc {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.8em;
+        }
+
+        .video-index {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 5000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+        }
+
+        .modal-content {
+            position: relative;
+            margin: 2% auto;
+            width: 90%;
+            max-width: 1000px;
+            height: 90%;
+        }
+
+        /* 播放器工具栏 */
+        .modal-toolbar {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-toolbar .btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .modal-toolbar .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .modal-toolbar .title {
+            flex: 1;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            font-weight: 600;
+            line-height: 1.2;
+            max-height: 3.2em;
+            overflow: hidden;
+        }
+        .modal-toolbar .hint { color: rgba(255,255,255,0.85); font-size: 12px; }
+        .modal-toolbar .close {
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border-radius: 8px;
+            padding: 0 10px;
+            font-size: 22px;
+            line-height: 34px;
+            height: 34px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .modal-desc {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -42px;
+            color: #ddd;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 4.2em;
+            overflow: hidden;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin: 50px 0;
+            display: none;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0 30px;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #667eea;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .legend {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* 置顶广告 */
+        .top-ad {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 90px;
+            background: rgba(255,255,255,0.18);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .top-ad .ad-inner {
+            width: min(1200px, 96%);
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .top-ad a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .top-ad img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ad-close {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 3;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .ad-reopen {
+            position: fixed;
+            z-index: 2100;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: none;
+            user-select: none;
+            font-size: 12px;
+        }
+
+        .ad-text {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            padding: 6px 10px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 16px;
+            max-width: 80%;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .ad-settings-btn {
+            position: absolute;
+            right: 6px;
+            top: 6px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .ad-settings-panel {
+            position: absolute;
+            right: 6px;
+            top: 40px;
+            background: #ffffff;
+            color: #333;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            padding: 12px;
+            width: min(360px, 92vw);
+            display: none;
+            z-index: 2100;
+        }
+
+        .ad-settings-panel label { font-size: 12px; color: #555; }
+        .ad-settings-panel input { width: 100%; padding: 8px; margin: 6px 0 10px; border-radius: 8px; border: 1px solid #ddd; }
+        .ad-settings-panel .row { display: flex; gap: 8px; }
+        .ad-settings-panel .row > * { flex: 1; }
+        .ad-settings-panel .actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .ad-settings-panel .actions button { padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; }
+        .ad-settings-panel .actions .save { background: #667eea; color: #fff; }
+        .ad-settings-panel .actions .reset { background: #eee; color: #333; }
+
+        /* 侧边广告（左右各一个） */
+        .side-ad {
+            position: fixed;
+            top: 120px;
+            width: 140px;
+            height: 520px;
+            z-index: 1900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .side-ad.left { left: 10px; }
+        .side-ad.right { right: 10px; }
+        .side-ad .ad-inner { width: 100%; height: 100%; position: relative; }
+        .side-ad a { display:block; width:100%; height:100%; border-radius: 12px; overflow:hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.25); background: rgba(0,0,0,0.2); position: relative; }
+        .side-ad img { width:100%; height:100%; object-fit: cover; display:block; }
+        .side-ad .ad-settings-btn { position:absolute; right:6px; top:6px; background: rgba(0,0,0,0.55); color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
+        .side-ad .ad-settings-panel { position:absolute; right:6px; top:40px; background:#fff; color:#333; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.25); padding:12px; width:min(320px, 92vw); display:none; z-index:2100; }
+        .side-ad .ad-settings-panel label { font-size:12px; color:#555; }
+        .side-ad .ad-settings-panel input { width:100%; padding:8px; margin:6px 0 10px; border-radius:8px; border:1px solid #ddd; }
+        .side-ad .ad-settings-panel .actions { display:flex; gap:8px; justify-content:flex-end; }
+        .side-ad .ad-settings-panel .actions .save { background:#667eea; color:#fff; border:none; border-radius:8px; padding:8px 12px; }
+        .side-ad .ad-settings-panel .actions .reset { background:#eee; color:#333; border:none; border-radius:8px; padding:8px 12px; }
+
+        /* 折叠状态 */
+        .side-ad.ad-collapsed { width: 26px; overflow: hidden; }
+        .side-ad.ad-collapsed a { display: none; }
+        .side-ad .ad-close { top: 6px; right: 6px; }
+
+        @media (max-width: 768px) {
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 15px;
+            }
+            
+            .search-box input {
+                width: 250px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+
+            body { padding-top: 120px; }
+            .top-ad { height: 100px; }
+            .top-ad .ad-inner { height: 80px; }
+            .side-ad { display: none; }
+            .ad-text { font-size: 14px; }
+        }
+
+        @media (max-width: 1200px) {
+            .side-ad { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 置顶广告（可配置） -->
+    <div class="top-ad" id="topAd">
+        <div class="ad-inner">
+            <button class="ad-close" id="topAdClose" title="收起">×</button>
+            <a id="adLink" href="#" target="_blank" rel="noopener noreferrer">
+                <img id="adImage" src="" alt="广告">
+                <div class="ad-text" id="topAdText" style="display:none"></div>
+            </a>
+        </div>
+    </div>
+    <!-- 左侧置顶广告 -->
+    <div class="side-ad left" id="leftAd">
+        <div class="ad-inner">
+            <button class="ad-close" id="leftAdClose" title="收起">×</button>
+            <a id="leftAdLink" href="#" target="_blank" rel="noopener noreferrer">
+                <img id="leftAdImage" src="" alt="广告-左">
+                <div class="ad-text" id="leftAdText" style="display:none"></div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 右侧置顶广告 -->
+    <div class="side-ad right" id="rightAd">
+        <div class="ad-inner">
+            <button class="ad-close" id="rightAdClose" title="收起">×</button>
+            <a id="rightAdLink" href="#" target="_blank" rel="noopener noreferrer">
+                <img id="rightAdImage" src="" alt="广告-右">
+                <div class="ad-text" id="rightAdText" style="display:none"></div>
+            </a>
+        </div>
+    </div>
+
+    <div class="ad-reopen" id="reopenLeft" style="left:12px; top:120px;">展开左侧广告</div>
+    <div class="ad-reopen" id="reopenRight" style="right:12px; top:120px;">展开右侧广告</div>
+    <div class="ad-reopen" id="reopenTop" style="left:50%; transform:translateX(-50%); top:6px;">展开顶部广告</div>
+    <div class="container">
+        <h1>🎬 影片播放器</h1>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索影片...">
+        </div>
+        <div class="filters">
+            <select id="categorySelect">
+                <option value="">全部分类</option>
+            </select>
+            <select id="pageSizeSelect">
+                <option value="24">每页 24</option>
+                <option value="36" selected>每页 36</option>
+                <option value="60">每页 60</option>
+                <option value="96">每页 96</option>
+            </select>
+            <!-- 重新加载CSV按钮已移除以避免误触导致覆盖感知混乱 -->
+        </div>
+
+        <div class="loading" id="loading">正在加载影片...</div>
+        <div class="no-results" id="noResults">没有找到匹配的影片</div>
+        
+        <div class="video-grid" id="videoGrid">
+            <!-- 视频卡片将通过JavaScript动态生成 -->
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+        <div class="legend" id="resultLegend"></div>
+    </div>
+
+    <!-- 视频播放模态框 -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-toolbar">
+                <button class="btn" id="btnBack">返回列表</button>
+                <div class="title" id="modalTitle"></div>
+                <div class="hint">ESC 退出 · ←/→ 切换</div>
+                <button class="btn" id="btnPrev">上一集</button>
+                <button class="btn" id="btnNext">下一集</button>
+                <button class="close" id="btnClose" title="关闭">×</button>
+            </div>
+            <video id="videoPlayer" controls autoplay>
+                您的浏览器不支持视频播放。
+            </video>
+            <div class="modal-desc" id="modalDesc"></div>
+        </div>
+    </div>
+
+    <script>
+        // 数据状态
+        let allVideos = [];
+        let workingVideos = [];
+        let filteredVideos = [];
+        let currentPage = 1;
+        let pageSize = 36;
+        let playingIndex = -1;
+        let hlsInstance = null;
+
+        const els = {
+            loading: document.getElementById('loading'),
+            grid: document.getElementById('videoGrid'),
+            noResults: document.getElementById('noResults'),
+            pagination: document.getElementById('pagination'),
+            resultLegend: document.getElementById('resultLegend'),
+            search: document.getElementById('searchInput'),
+            category: document.getElementById('categorySelect'),
+            pageSize: document.getElementById('pageSizeSelect'),
+            adLink: document.getElementById('adLink'),
+            adImage: document.getElementById('adImage'),
+            adBtn: document.getElementById('adSettingsBtn'),
+            adPanel: document.getElementById('adSettingsPanel'),
+            adLinkInput: document.getElementById('adLinkInput'),
+            adImageInput: document.getElementById('adImageInput'),
+            adSaveBtn: document.getElementById('adSaveBtn'),
+            adResetBtn: document.getElementById('adResetBtn'),
+            // 左右广告元素
+            leftAdLink: document.getElementById('leftAdLink'),
+            leftAdImage: document.getElementById('leftAdImage'),
+            leftAdBtn: document.getElementById('leftAdSettingsBtn'),
+            leftAdPanel: document.getElementById('leftAdSettingsPanel'),
+            leftAdLinkInput: document.getElementById('leftAdLinkInput'),
+            leftAdImageInput: document.getElementById('leftAdImageInput'),
+            leftAdSaveBtn: document.getElementById('leftAdSaveBtn'),
+            leftAdResetBtn: document.getElementById('leftAdResetBtn'),
+            rightAdLink: document.getElementById('rightAdLink'),
+            rightAdImage: document.getElementById('rightAdImage'),
+            rightAdBtn: document.getElementById('rightAdSettingsBtn'),
+            rightAdPanel: document.getElementById('rightAdSettingsPanel'),
+            // 广告元素（无内嵌设置）
+            topAd: document.getElementById('topAd'),
+            leftAd: document.getElementById('leftAd'),
+            rightAd: document.getElementById('rightAd'),
+            adLink: document.getElementById('adLink'),
+            adImage: document.getElementById('adImage'),
+            topAdText: document.getElementById('topAdText'),
+            leftAdLink: document.getElementById('leftAdLink'),
+            leftAdImage: document.getElementById('leftAdImage'),
+            leftAdText: document.getElementById('leftAdText'),
+            rightAdLink: document.getElementById('rightAdLink'),
+            rightAdImage: document.getElementById('rightAdImage'),
+            rightAdText: document.getElementById('rightAdText'),
+            // 播放器控制
+            btnBack: document.getElementById('btnBack'),
+            btnPrev: document.getElementById('btnPrev'),
+            btnNext: document.getElementById('btnNext'),
+            btnClose: document.getElementById('btnClose'),
+            modalTitle: document.getElementById('modalTitle'),
+            modal: document.getElementById('videoModal'),
+            video: document.getElementById('videoPlayer')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            hookUI();
+            // 先尝试加载远程统一广告配置，再初始化广告与轮播（以便多端一致）
+            loadRemoteAdConfig().finally(() => { initAd(); setupCarousel(); startAdConfigPolling(); });
+            tryLoadCSV();
+        });
+
+        function hookUI() {
+            els.search.addEventListener('input', () => { currentPage = 1; applyFilters(); });
+            els.category.addEventListener('change', () => { currentPage = 1; applyFilters(); });
+            els.pageSize.addEventListener('change', () => { pageSize = parseInt(els.pageSize.value, 10); currentPage = 1; render(); });
+            // 重新加载CSV按钮已移除
+
+            // 事件委托：点击卡片播放
+            els.grid.addEventListener('click', (e) => {
+                const card = e.target.closest('.video-card');
+                if (!card) return;
+                const idx = parseInt(card.dataset.idx, 10);
+                if (!isNaN(idx)) openModalForIndex(idx);
+            });
+
+            // 播放器控制按钮
+            els.btnBack.addEventListener('click', closeModal);
+            els.btnClose.addEventListener('click', closeModal);
+            els.btnPrev.addEventListener('click', playPrev);
+            els.btnNext.addEventListener('click', playNext);
+
+            // 无内嵌设置面板
+        }
+
+        // CSV 加载逻辑
+        async function tryLoadCSV(force = false) {
+            if (!force && allVideos.length) { render(); return; }
+            showLoading(true);
+            const names = ['video_data.csv', 'A.csv', 'a.csv', 'a_utf8.csv'];
+            try {
+                const text = await fetchAnyCsv(names, 4000);
+                cacheCsvText(text);
+                const rows = parseCSV(text);
+                allVideos = rows;
+                workingVideos = allVideos.map(addCategories);
+                buildCategories();
+                applyFilters();
+            } catch (e) {
+                const cached = getCachedCsvText();
+                const historyCsv = getCsvHistoryCsv();
+                const fallback = cached || historyCsv;
+                if (fallback) {
+                    const rows = parseCSV(fallback);
+                    allVideos = rows;
+                    workingVideos = allVideos.map(addCategories);
+                    buildCategories();
+                    applyFilters();
+                    toast(cached ? '已使用本地缓存数据' : '已使用历史合并数据');
+                } else {
+                    toast('未找到CSV或无法读取，请确认目录下存在 video_data.csv / A.csv / a.csv / a_utf8.csv');
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function fetchAnyCsv(names, timeoutMs = 5000) {
+            // 顺序优先：优先使用最新视频文件，其次兼容旧文件名
+            for (const name of names) {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+                try {
+                    const text = await fetchCsvText(name, ctrl.signal);
+                    return text;
+                } catch(_) {
+                    // 尝试下一个
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+            throw new Error('未找到可用的 CSV');
+        }
+
+        // 以 UTF-8 优先，失败回退 GB18030 解码
+        async function fetchCsvText(name, signal) {
+            const res = await fetch(name + '?_ts=' + Date.now(), { signal });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const buf = await res.arrayBuffer();
+            let text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(buf));
+            // 如果出现大量替换字符，尝试 GB18030
+            const bad = (text.match(/\uFFFD/g) || []).length;
+            if (bad > 10 && 'TextDecoder' in window) {
+                try {
+                    text = new TextDecoder('gb18030', { fatal: false }).decode(new Uint8Array(buf));
+                } catch (_) { /* ignore */ }
+            }
+            return text;
+        }
+
+        // CSV 解析（支持引号与逗号）
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/).filter(Boolean);
+            if (!lines.length) return [];
+            // 跳过表头
+            const dataLines = lines[0].includes('影片') || lines[0].toLowerCase().includes('m3u8') ? lines.slice(1) : lines;
+            const results = [];
+            for (const line of dataLines) {
+                const cols = splitCsvLine(line);
+                if (cols.length < 2) continue;
+                const title = (cols[0] || '').trim().replace(/^\d+\s*[→,:，、]/, '').replace(/^"|"$/g, '');
+                const url = (cols[1] || '').trim().replace(/^"|"$/g, '');
+                const cover = (cols[2] || '').trim().replace(/^"|"$/g, '');
+                const desc = (cols[3] || '').trim().replace(/^"|"$/g, '');
+                if (!title || !url) continue;
+                results.push({ title, url, cover, desc });
+            }
+            return results;
+        }
+
+        function splitCsvLine(line) {
+            const out = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (ch === ',' && !inQuotes) {
+                    out.push(cur); cur = '';
+                } else {
+                    cur += ch;
+                }
+            }
+            out.push(cur);
+            return out;
+        }
+
+        // 分类生成
+        const keywordToCategory = [
+            ['麻豆', '麻豆'], ['果冻', '果冻'], ['兔子', '兔子先生'],
+            ['无码', '无码'], ['無碼', '无码'], ['无码', '无码'],
+            ['素人', '素人'], ['人妻', '人妻'], ['学生', '学生'], ['女学生', '学生'], ['JK', '学生'], ['J○', '学生'],
+            ['口交', '口交'], ['フェラ', '口交'],
+            ['3P', '3P'], ['群交', '群交'],
+            ['丝袜', '丝袜'], ['黑丝', '丝袜'],
+            ['老师', '教师'], ['教師', '教师'], ['教师', '教师'],
+            ['巨乳', '巨乳'], ['爆乳', '巨乳'],
+            ['日本', '日本'], ['韩国', '韩国'], ['欧美', '欧美'], ['俄罗斯', '俄罗斯'],
+            ['金发', '金发'], ['金髪', '金发'],
+            ['黑人', '黑人']
+        ];
+
+        function addCategories(item) {
+            const lower = item.title.toLowerCase();
+            const cats = new Set();
+            for (const [key, value] of keywordToCategory) {
+                if (item.title.includes(key) || lower.includes(key.toLowerCase())) cats.add(value);
+            }
+            if (!cats.size) cats.add('其他');
+            return { ...item, categories: Array.from(cats) };
+        }
+
+        function buildCategories() {
+            const countMap = new Map();
+            for (const v of workingVideos) {
+                for (const c of v.categories) {
+                    countMap.set(c, (countMap.get(c) || 0) + 1);
+                }
+            }
+            const entries = Array.from(countMap.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+            els.category.innerHTML = '<option value="">全部分类</option>' + entries.map(([c, n]) => `<option value="${escapeHtml(c)}">${c}（${n}）</option>`).join('');
+        }
+
+        // 过滤与渲染
+        function applyFilters() {
+            const q = els.search.value.trim().toLowerCase();
+            const cat = els.category.value;
+            filteredVideos = workingVideos.filter(v => {
+                const okQ = !q || v.title.toLowerCase().includes(q);
+                const okC = !cat || (v.categories && v.categories.includes(cat));
+                return okQ && okC;
+            });
+            render();
+        }
+
+        function render() {
+            // 统计文本
+            els.resultLegend.textContent = filteredVideos.length ? `共 ${filteredVideos.length} 条` : '';
+
+            // 分页
+            const totalPages = Math.max(1, Math.ceil(filteredVideos.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, filteredVideos.length);
+            const pageSlice = filteredVideos.slice(start, end);
+
+            // 渲染卡片
+            if (filteredVideos.length === 0) {
+                els.grid.innerHTML = '';
+                els.noResults.style.display = 'block';
+            } else {
+                els.noResults.style.display = 'none';
+                els.grid.innerHTML = pageSlice.map((video, i) => {
+                    const globalIndex = start + i;
+                    const cover = video.cover ? escapeHtml(video.cover) : '';
+                    const desc = video.desc ? escapeHtml(video.desc) : '';
+                    return `
+                    <div class="video-card" data-idx="${globalIndex}">
+                        <div class="video-thumbnail">
+                            ${cover ? `<img src="${cover}" alt="${escapeHtml(video.title)}" loading="lazy"/>` : ''}
+                            <div class="play-icon">▶</div>
+                        </div>
+                        <div class="video-info">
+                            <div class="video-index">第 ${globalIndex + 1} 集</div>
+                            <div class="video-title">${escapeHtml(video.title)}</div>
+                            ${desc ? `<div class="video-desc">${desc}</div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            // 渲染分页按钮
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const btns = [];
+            const makeBtn = (label, page, active = false, disabled = false) => `<button ${active?'class="active"':''} ${disabled?'disabled':''} data-page="${page}">${label}</button>`;
+            btns.push(makeBtn('«', 1, false, currentPage === 1));
+            btns.push(makeBtn('‹', Math.max(1, currentPage - 1), false, currentPage === 1));
+
+            const windowSize = 5;
+            let start = Math.max(1, currentPage - Math.floor(windowSize/2));
+            let end = Math.min(totalPages, start + windowSize - 1);
+            if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+            for (let p = start; p <= end; p++) btns.push(makeBtn(String(p), p, p === currentPage));
+
+            btns.push(makeBtn('›', Math.min(totalPages, currentPage + 1), false, currentPage === totalPages));
+            btns.push(makeBtn('»', totalPages, false, currentPage === totalPages));
+            els.pagination.innerHTML = btns.join('');
+
+            els.pagination.querySelectorAll('button').forEach(b => {
+                b.addEventListener('click', () => {
+                    const p = parseInt(b.dataset.page, 10);
+                    if (!isNaN(p) && p !== currentPage) { currentPage = p; render(); }
+                });
+            });
+        }
+
+        function showLoading(flag) { els.loading.style.display = flag ? 'block' : 'none'; }
+        function toast(msg) { els.resultLegend.textContent = msg; }
+        function escapeHtml(str) { return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s])); }
+        // 本地缓存（防止 CSV 暂时缺失时页面全空）
+        function cacheCsvText(text){ try { localStorage.setItem('lastCsvText', text); } catch(_){} }
+        function getCachedCsvText(){ try { return localStorage.getItem('lastCsvText') || ''; } catch(_) { return ''; } }
+        function getCsvHistoryCsv(){ try { return localStorage.getItem('csvHistoryCsv') || ''; } catch(_) { return ''; } }
+
+        // 播放控制
+        function openModalForIndex(index) {
+            playingIndex = index;
+            playByIndex(playingIndex);
+            els.modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function playByIndex(index) {
+            const item = filteredVideos[index];
+            if (!item) return;
+            els.modalTitle.textContent = item.title;
+            // 填充简介
+            const md = document.getElementById('modalDesc');
+            md.textContent = item.desc || '';
+            const url = item.url;
+            // 释放旧 HLS
+            if (hlsInstance && typeof hlsInstance.destroy === 'function') {
+                try { hlsInstance.destroy(); } catch(_){}
+                hlsInstance = null;
+            }
+            // 设置源
+            if (els.video.canPlayType('application/vnd.apple.mpegurl')) {
+                els.video.src = url;
+            } else if (typeof Hls !== 'undefined') {
+                hlsInstance = new Hls();
+                hlsInstance.loadSource(url);
+                hlsInstance.attachMedia(els.video);
+            } else {
+                els.video.src = url;
+            }
+            // 更新按钮状态
+            els.btnPrev.disabled = (index <= 0);
+            els.btnNext.disabled = (index >= filteredVideos.length - 1);
+        }
+
+        function playPrev() { if (playingIndex > 0) { playingIndex--; playByIndex(playingIndex); } }
+        function playNext() { if (playingIndex < filteredVideos.length - 1) { playingIndex++; playByIndex(playingIndex); } }
+
+        function closeModal() {
+            els.video.pause();
+            els.video.src = '';
+            if (hlsInstance && typeof hlsInstance.destroy === 'function') {
+                try { hlsInstance.destroy(); } catch(_){}
+                hlsInstance = null;
+            }
+            els.modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            playingIndex = -1;
+        }
+
+        window.onclick = function(event) {
+            if (event.target === els.modal) closeModal();
+        }
+        document.addEventListener('keydown', function(event) {
+            if (els.modal.style.display === 'block') {
+                if (event.key === 'Escape') closeModal();
+                else if (event.key === 'ArrowLeft') playPrev();
+                else if (event.key === 'ArrowRight') playNext();
+            }
+        });
+
+        // 广告配置
+        const DEFAULT_AD = {
+            link: 'https://example.com',
+            image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
+            text: '',
+            textColor: '#ffffff',
+            textSize: 16,
+            textPos: 'lb',
+            textBold: false,
+            bgOpacity: 55,
+            radius: 8,
+            shadow: true
+        };
+
+        // 远程广告配置（跨设备同步）
+        async function loadRemoteAdConfig() {
+            try {
+                const res = await fetch('ad_config.json?_ts=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) return;
+                const j = await res.json();
+                if (j && typeof j === 'object') {
+                    try { if (j.adConfig) localStorage.setItem('adConfig', JSON.stringify(j.adConfig)); } catch(_){ }
+                    try { if (j.leftAdConfig) localStorage.setItem('leftAdConfig', JSON.stringify(j.leftAdConfig)); } catch(_){ }
+                    try { if (j.rightAdConfig) localStorage.setItem('rightAdConfig', JSON.stringify(j.rightAdConfig)); } catch(_){ }
+                    try { if (j.adVisibility) localStorage.setItem('adVisibility', JSON.stringify(j.adVisibility)); } catch(_){ }
+                    try { if (j.adCarousel) localStorage.setItem('adCarousel', JSON.stringify(j.adCarousel)); } catch(_){ }
+                }
+            } catch (_) { /* 忽略网络或解析错误 */ }
+        }
+
+        function initAd() {
+            applyAd(getAdConfig());
+            applySideAd('left', getSideAdConfig('leftAdConfig'));
+            applySideAd('right', getSideAdConfig('rightAdConfig'));
+            applyAdVisibility();
+
+            // 折叠/展开
+            const bindCollapse = (btnId, adEl, reopenId, storeKey) => {
+                const btn = document.getElementById(btnId);
+                const reopen = document.getElementById(reopenId);
+                if (!btn || !adEl || !reopen) return;
+                const saved = localStorage.getItem(storeKey) === '1';
+                if (saved) collapse(adEl, reopen, storeKey);
+                btn.addEventListener('click', (e) => { e.stopPropagation(); collapse(adEl, reopen, storeKey); });
+                reopen.addEventListener('click', () => expand(adEl, reopen, storeKey));
+            };
+            bindCollapse('leftAdClose', els.leftAd, 'reopenLeft', 'adCollapseLeft');
+            bindCollapse('rightAdClose', els.rightAd, 'reopenRight', 'adCollapseRight');
+            bindCollapse('topAdClose', els.topAd, 'reopenTop', 'adCollapseTop');
+        }
+
+        function collapse(adEl, reopenEl, key) {
+            if (adEl.classList.contains('side-ad')) adEl.classList.add('ad-collapsed');
+            else adEl.style.display = 'none';
+            reopenEl.style.display = 'block';
+            localStorage.setItem(key, '1');
+        }
+        function expand(adEl, reopenEl, key) {
+            if (adEl.classList.contains('side-ad')) adEl.classList.remove('ad-collapsed');
+            else adEl.style.display = 'flex';
+            reopenEl.style.display = 'none';
+            localStorage.removeItem(key);
+        }
+
+        function getAdConfig() {
+            try { return JSON.parse(localStorage.getItem('adConfig') || 'null') || DEFAULT_AD; } catch { return DEFAULT_AD; }
+        }
+        function saveAdConfig(cfg) { localStorage.setItem('adConfig', JSON.stringify(cfg)); }
+        function applyAd(cfg) {
+            els.adLink.href = cfg.link || '#';
+            els.adImage.src = cfg.image || DEFAULT_AD.image;
+            if (els.topAdText) {
+                const txt = (cfg.text || '').trim();
+                if (cfg.textHtml) { els.topAdText.innerHTML = txt; } else { els.topAdText.textContent = txt; }
+                els.topAdText.style.display = txt ? 'block' : 'none';
+                applyTextStyleAndPos(els.topAdText, cfg);
+            }
+        }
+        const DEFAULT_SIDE_AD = {
+            link: 'https://example.com',
+            image: 'https://images.unsplash.com/photo-1520975922424-c2e8e3f84b68?q=80&w=900&auto=format&fit=crop',
+            text: '',
+            textColor: '#ffffff',
+            textSize: 16,
+            textPos: 'lb',
+            textBold: false,
+            bgOpacity: 55,
+            radius: 8,
+            shadow: true
+        };
+        function getSideAdConfig(key) {
+            try { return JSON.parse(localStorage.getItem(key) || 'null') || DEFAULT_SIDE_AD; } catch { return DEFAULT_SIDE_AD; }
+        }
+        function saveSideAdConfig(key, cfg) { localStorage.setItem(key, JSON.stringify(cfg)); }
+        function applySideAd(which, cfg) {
+            if (which === 'left') {
+                els.leftAdLink.href = cfg.link || '#';
+                els.leftAdImage.src = cfg.image || DEFAULT_SIDE_AD.image;
+                if (els.leftAdText) {
+                    const txt = (cfg.text || '').trim();
+                    if (cfg.textHtml) { els.leftAdText.innerHTML = txt; } else { els.leftAdText.textContent = txt; }
+                    els.leftAdText.style.display = txt ? 'block' : 'none';
+                    applyTextStyleAndPos(els.leftAdText, cfg);
+                }
+            } else if (which === 'right') {
+                els.rightAdLink.href = cfg.link || '#';
+                els.rightAdImage.src = cfg.image || DEFAULT_SIDE_AD.image;
+                if (els.rightAdText) {
+                    const txt = (cfg.text || '').trim();
+                    if (cfg.textHtml) { els.rightAdText.innerHTML = txt; } else { els.rightAdText.textContent = txt; }
+                    els.rightAdText.style.display = txt ? 'block' : 'none';
+                    applyTextStyleAndPos(els.rightAdText, cfg);
+                }
+            }
+        }
+
+        function applyTextStyleAndPos(targetEl, cfg) {
+            try {
+                // Style
+                targetEl.style.color = cfg.textColor || '#ffffff';
+                targetEl.style.fontSize = (Number(cfg.textSize) || 16) + 'px';
+                targetEl.style.fontWeight = cfg.textBold ? '700' : '400';
+                const radius = Number(cfg.radius);
+                targetEl.style.borderRadius = Number.isFinite(radius) ? radius + 'px' : '8px';
+                const opacity = Math.min(100, Math.max(0, Number(cfg.bgOpacity || 55))) / 100;
+                const rgb = hexToRgb(cfg.bgColor || '#000000');
+                targetEl.style.background = `rgba(${rgb.r},${rgb.g},${rgb.b},${opacity})`;
+                targetEl.style.boxShadow = cfg.shadow === false ? 'none' : '0 6px 16px rgba(0,0,0,0.35)';
+                targetEl.style.fontFamily = cfg.fontFamily || 'inherit';
+                targetEl.style.textAlign = (cfg.textAlign || 'left');
+                const outlineWidth = Number(cfg.outlineWidth || 0);
+                const outlineColor = cfg.outlineColor || '#000000';
+                targetEl.style.webkitTextStroke = outlineWidth > 0 ? `${outlineWidth}px ${outlineColor}` : '0px transparent';
+                const strength = Number(cfg.shadowStrength || 0);
+                targetEl.style.textShadow = strength > 0 ? `0 2px 4px rgba(0,0,0,${Math.min(1, Math.max(0, strength))})` : 'none';
+
+                // Position
+                const pos = (cfg.textPos || 'lb').toLowerCase();
+                targetEl.style.top = '';
+                targetEl.style.right = '';
+                targetEl.style.bottom = '';
+                targetEl.style.left = '';
+                targetEl.style.transform = 'none';
+                const gap = 10 + 'px';
+                if (pos === 'lb') { targetEl.style.left = gap; targetEl.style.bottom = gap; }
+                else if (pos === 'rb') { targetEl.style.right = gap; targetEl.style.bottom = gap; }
+                else if (pos === 'lt') { targetEl.style.left = gap; targetEl.style.top = gap; }
+                else if (pos === 'rt') { targetEl.style.right = gap; targetEl.style.top = gap; }
+                else if (pos === 'cc') { targetEl.style.left = '50%'; targetEl.style.top = '50%'; targetEl.style.transform = 'translate(-50%, -50%)'; }
+                else { targetEl.style.left = gap; targetEl.style.bottom = gap; }
+            } catch (_) { /* noop */ }
+        }
+        function applyAdVisibility() {
+            const vis = getAdVisibility();
+            els.topAd.style.display = vis.top ? 'flex' : 'none';
+            els.leftAd.style.display = vis.left ? 'flex' : 'none';
+            els.rightAd.style.display = vis.right ? 'flex' : 'none';
+        }
+        function getAdVisibility() {
+            try { return JSON.parse(localStorage.getItem('adVisibility') || 'null') || { top: true, left: true, right: true }; } catch { return { top: true, left: true, right: true }; }
+        }
+
+        // 实时联动：BroadcastChannel + storage
+        (function setupRealtimeAdSync(){
+            try {
+                const bc = new BroadcastChannel('ad-config');
+                bc.onmessage = () => { refreshAllAds(); setupCarousel(); };
+            } catch (_) { /* BroadcastChannel 可能不可用 */ }
+            window.addEventListener('storage', (e) => {
+                if (!e) return;
+                if (['adConfig','leftAdConfig','rightAdConfig','adVisibility'].includes(e.key)) {
+                    refreshAllAds(); setupCarousel();
+                }
+            });
+        })();
+
+        function refreshAllAds() {
+            applyAd(getAdConfig());
+            applySideAd('left', getSideAdConfig('leftAdConfig'));
+            applySideAd('right', getSideAdConfig('rightAdConfig'));
+            applyAdVisibility();
+        }
+
+        // 顶部轮播（读取 admin.html 配置）
+        let carouselTimer = null;
+        function setupCarousel() {
+            try { if (carouselTimer) { clearInterval(carouselTimer); carouselTimer = null; } } catch(_){}
+            const cfg = (function(){ try { return JSON.parse(localStorage.getItem('adCarousel')||'null')||{} } catch { return {} } })();
+            const enabled = !!cfg.enabled;
+            const images = Array.isArray(cfg.images) ? cfg.images : [];
+            const interval = Math.max(2, Number(cfg.interval) || 8);
+            if (!enabled || images.length === 0) return;
+            let i = 0;
+            els.adImage.src = images[0];
+            carouselTimer = setInterval(() => {
+                i = (i + 1) % images.length;
+                els.adImage.src = images[i];
+            }, interval * 1000);
+        }
+        setupCarousel();
+
+        // 周期性轮询远程广告配置，自动应用最新配置（免刷新）
+        let adConfigPollTimer = null;
+        function startAdConfigPolling(){
+            try { if (adConfigPollTimer) { clearInterval(adConfigPollTimer); adConfigPollTimer = null; } } catch(_){ }
+            const intervalSec = Math.max(5, Number(localStorage.getItem('adConfigPollSec')||30));
+            adConfigPollTimer = setInterval(async ()=>{
+                try {
+                    await loadRemoteAdConfig();
+                    refreshAllAds();
+                    setupCarousel();
+                } catch(_){}
+            }, intervalSec * 1000);
+        }
+
+        function hexToRgb(hex) {
+            let h = String(hex || '').replace('#','');
+            if (h.length === 3) { h = h.split('').map(c=>c+c).join(''); }
+            const num = parseInt(h, 16);
+            return { r: (num>>16)&255, g: (num>>8)&255, b: num&255 };
+        }
+    </script>
+
+    <!-- HLS.js库用于支持m3u8格式 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</body>
+</html>
