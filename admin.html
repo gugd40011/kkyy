@@ -705,6 +705,12 @@
         const branch = byId('ghBranch') || 'main';
         const token = byId('ghToken');
         const path = byId('cfgPath') || 'ad_config.json';
+        // 记住 GH 凭据
+        try {
+          const ghpEl = document.getElementById('ghPath');
+          const ghp = ghpEl && ghpEl.value ? ghpEl.value : 'video_data.csv';
+          localStorage.setItem('ghCreds', JSON.stringify({ owner, repo, branch, path: ghp, token }));
+        } catch(_){ }
         if (!owner || !repo || !token){ alert('请先在下方填写 GitHub Owner/Repo/Token'); return; }
         setStatus('推送中...');
         const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
@@ -948,10 +954,33 @@
       document.getElementById('btnSaveAuto').onclick = ()=>{ const cfg = { enabled: document.getElementById('autoEnabled').checked, intervalMin: Number(document.getElementById('autoInterval').value)||60 }; saveAuto(cfg); applyAuto(); maybeAutoPushAdConfig(); };
       applyAuto();
 
-      // 预填 GitHub 路径为带时间戳的文件名（若为空或默认值）
+      // 预填 GitHub 凭据（从本机持久化恢复），并绑定自动保存
       try{
-        const ghp = document.getElementById('ghPath');
-        if (ghp && (!ghp.value || ghp.value === 'video_data.csv')) ghp.value = 'video_data_'+ nowStamp() +'.csv';
+        const saved = (function(){ try { return JSON.parse(localStorage.getItem('ghCreds')||'null')||{} } catch { return {} } })();
+        const setVal = (id, v, fallback='') => { const el = document.getElementById(id); if (el) el.value = (typeof v==='string' && v) ? v : fallback; };
+        setVal('ghOwner', saved.owner, '');
+        setVal('ghRepo', saved.repo, '');
+        setVal('ghBranch', saved.branch, 'main');
+        setVal('ghPath', saved.path, 'video_data.csv');
+        setVal('ghToken', saved.token, '');
+        const saveGh = () => {
+          try {
+            const creds = {
+              owner: (document.getElementById('ghOwner')||{}).value||'',
+              repo: (document.getElementById('ghRepo')||{}).value||'',
+              branch: (document.getElementById('ghBranch')||{}).value||'main',
+              path: (document.getElementById('ghPath')||{}).value||'video_data.csv',
+              token: (document.getElementById('ghToken')||{}).value||''
+            };
+            localStorage.setItem('ghCreds', JSON.stringify(creds));
+          } catch(_){ }
+        };
+        ;['ghOwner','ghRepo','ghBranch','ghPath','ghToken'].forEach(id=>{
+          const el = document.getElementById(id); if (!el) return;
+          el.addEventListener('input', saveGh);
+          el.addEventListener('change', saveGh);
+          el.addEventListener('blur', saveGh);
+        });
       }catch(_){ }
 
       // 跨设备配置同步按钮绑定
