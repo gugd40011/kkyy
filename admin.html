@@ -49,9 +49,8 @@
         </div>
         <div class="actions">
           <button class="save" id="btnAuthLogin">登录</button>
-          <button class="reset" id="btnAuthReset">恢复默认账号</button>
         </div>
-        <div class="hint">提示：账号信息仅保存在本机浏览器。忘记后可点击“恢复默认账号”。</div>
+        <div class="hint">提示：账号信息仅保存在本机浏览器。</div>
       </div>
     </div>
   </div>
@@ -447,7 +446,14 @@
 
   <script>
     // ===== 简单本地登录（存于本机，非服务端验证）=====
-    function loadAuth(){ try { return JSON.parse(localStorage.getItem('adminAuth')||'null')||{ user:'gugd888', pass:'qjklwwqvb888///' } } catch { return { user:'gugd888', pass:'qjklwwqvb888///' } } }
+    function loadAuth(){
+      try {
+        const saved = JSON.parse(localStorage.getItem('adminAuth')||'null');
+        if (saved && typeof saved.user==='string' && typeof saved.pass==='string') return saved;
+      } catch {}
+      // 默认值不写入界面，仅在校验时使用
+      return { user:'gugd888', pass:'qjklwwqvb888///' };
+    }
     function saveAuth(a){ try { localStorage.setItem('adminAuth', JSON.stringify(a)); } catch{} }
     function requireAuth(){
       const auth = loadAuth();
@@ -467,13 +473,7 @@
           alert('用户名或密码不正确');
         }
       };
-      document.getElementById('btnAuthReset').onclick = () => {
-        saveAuth({ user:'gugd888', pass:'qjklwwqvb888///' });
-        alert('已恢复默认账号');
-        // 恢复默认后也不展示具体值
-        document.getElementById('authUser').value = '';
-        document.getElementById('authPass').value = '';
-      };
+      // 移除恢复默认按钮，避免任何途径泄露默认值
     }
 
     const DEFAULT_AD = { link: 'https://example.com', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop', text: '', textColor: '#ffffff', textSize: 16, textPos: 'lb', textBold: false, bgOpacity: 55, radius: 8, shadow: true };
