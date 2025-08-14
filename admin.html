@@ -25,9 +25,37 @@
     .hr { height:1px; background:#1f2937; margin:18px 0; }
     .hint { font-size:12px; color:#9ca3af; }
     .link { color:#60a5fa; text-decoration:none; }
+    /* 登录遮罩 */
+    .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .auth-card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:20px; width: min(360px, 92vw); box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+    .auth-card h3 { margin:0 0 12px; font-size: 18px; }
+    .auth-card .row { display:flex; flex-direction:column; gap:10px; }
+    .auth-card input { width:100%; padding:10px; border-radius:8px; border:1px solid #374151; background:#0b1220; color:#e5e7eb; }
+    .auth-card .actions { display:flex; gap:10px; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-card">
+      <h3>登录后台</h3>
+      <div class="row">
+        <div>
+          <label>用户名</label>
+          <input id="authUser" type="text" placeholder="gugd888" />
+        </div>
+        <div>
+          <label>密码</label>
+          <input id="authPass" type="password" placeholder="qjklwwqvb888///" />
+        </div>
+        <div class="actions">
+          <button class="save" id="btnAuthLogin">登录</button>
+          <button class="reset" id="btnAuthReset">恢复默认账号</button>
+        </div>
+        <div class="hint">默认用户名：gugd888，密码：qjklwwqvb888///。可在登录成功后前往“全局同步设置”下方保存凭据（保存在本机，不上传服务器）。</div>
+      </div>
+    </div>
+  </div>
+
   <h1>广告管理</h1>
   <p class="note">本页面变更会保存到浏览器 localStorage。前台页面会自动读取。你可以先在此保存，然后在前台刷新查看效果。
     <a class="link" href="index.html" target="_blank" rel="noopener noreferrer">打开前台</a>
@@ -418,6 +446,34 @@
   </div>
 
   <script>
+    // ===== 简单本地登录（存于本机，非服务端验证）=====
+    function loadAuth(){ try { return JSON.parse(localStorage.getItem('adminAuth')||'null')||{ user:'gugd888', pass:'qjklwwqvb888///' } } catch { return { user:'gugd888', pass:'qjklwwqvb888///' } } }
+    function saveAuth(a){ try { localStorage.setItem('adminAuth', JSON.stringify(a)); } catch{} }
+    function requireAuth(){
+      const auth = loadAuth();
+      const ok = sessionStorage.getItem('adminAuthed') === '1';
+      const overlay = document.getElementById('authOverlay');
+      if (!ok){ overlay.style.display = 'flex'; }
+      document.getElementById('authUser').value = auth.user||'gugd888';
+      document.getElementById('authPass').value = '';
+      document.getElementById('btnAuthLogin').onclick = () => {
+        const u = (document.getElementById('authUser')||{}).value || '';
+        const p = (document.getElementById('authPass')||{}).value || '';
+        if (u === (auth.user||'gugd888') && p === (auth.pass||'qjklwwqvb888///')){
+          sessionStorage.setItem('adminAuthed', '1');
+          overlay.style.display = 'none';
+        } else {
+          alert('用户名或密码不正确');
+        }
+      };
+      document.getElementById('btnAuthReset').onclick = () => {
+        saveAuth({ user:'gugd888', pass:'qjklwwqvb888///' });
+        alert('已恢复默认：gugd888 / qjklwwqvb888///');
+        document.getElementById('authUser').value = 'gugd888';
+        document.getElementById('authPass').value = '';
+      };
+    }
+
     const DEFAULT_AD = { link: 'https://example.com', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop', text: '', textColor: '#ffffff', textSize: 16, textPos: 'lb', textBold: false, bgOpacity: 55, radius: 8, shadow: true };
     const DEFAULT_SIDE_AD = { link: 'https://example.com', image: 'https://images.unsplash.com/photo-1520975922424-c2e8e3f84b68?q=80&w=900&auto=format&fit=crop', text: '', textColor: '#ffffff', textSize: 16, textPos: 'lb', textBold: false, bgOpacity: 55, radius: 8, shadow: true };
 
@@ -836,6 +892,7 @@
       const branch = byId('ghBranch') || 'main';
       const path = byId('ghPath') || 'video_data.csv';
       const token = byId('ghToken');
+      try { localStorage.setItem('ghCreds', JSON.stringify({ owner, repo, branch, path, token })); } catch(_){ }
       if (!owner || !repo || !token){ alert('请填写 Owner/Repo/Token'); return; }
       const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
       // 获取 sha
@@ -875,6 +932,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
+      requireAuth();
       init();
       // 预填：目标站与代理（可修改）
       const cs = document.getElementById('crawlSites');
